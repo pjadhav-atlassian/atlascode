@@ -1,0 +1,185 @@
+image: node:20
+
+definitions:
+  caches:
+    npm: ~/.npm
+  
+  steps:
+    - step: &build-test
+        name: Build and Test
+        caches:
+          - npm
+        size: 4x
+        script:
+          - npm install
+          - npm run lint
+          - npm run test
+        
+    - step: &build-e2e-test
+        name: Build and E2E Test
+        caches:
+          - npm
+        size: 4x
+        services:
+          - docker
+        script:
+          - npm install
+          - npm run lint
+          - npm run test
+          - docker pull ghcr.io/atlassian/atlascode-e2e:latest || true
+          - docker tag ghcr.io/atlassian/atlascode-e2e:latest atlascode-e2e || true
+          - npm run test:e2e:docker
+        
+    - step: &build-extension
+        name: Build Extension
+        caches:
+          - npm
+        size: 2x
+        script:
+          - npm install
+          - npm run extension:package
+        artifacts:
+          - "atlascode-*.vsix"
+
+    - step: &publish-extension-statlas
+        name: Publish Extension Statlas
+        caches:
+          - npm
+        size: 2x
+        script:
+          - npm install
+          - curl -fsSLO https://statlas.prod.atl-paas.net/atlas-cli/install.sh
+          - /bin/bash -s <install.sh
+          - ./atlas --version
+          - ./atlas upgrade
+          - ./atlas plugin install -n statlas
+          - ./atlas statlas put --file "atlascode-0.0.0.vsix" -n atlascode-dev --auth-group "developers"
+    
+    - step: &build-prerelease-extension
+        name: Build Pre-release Extension
+        caches:
+          - npm
+        size: 4x
+        script:
+          - npm install
+          - npm run extension:package:prerelease
+        artifacts:
+          - "atlascode-*.vsix"
+
+    - step: &publish-extension
+        name: Publish Extension
+        caches:
+          - npm
+        size: 2x
+        script:
+          - PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          - echo "Using version ${PACKAGE_VERSION}"
+          - npx vsce publish -p $VSCE_MARKETPLACE_TOKEN --baseContentUrl https://bitbucket.org/atlassian/atlascode/raw/main/ --packagePath atlascode-${PACKAGE_VERSION}.vsix
+          - npx ovsx publish -p $OPENVSX_KEY "atlascode-${PACKAGE_VERSION}.vsix"
+        
+    - step: &publish-prerelease-extension
+        name: Publish Pre-release Extension
+        caches:
+          - npm
+        size: 2x
+        script:
+          - PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          - echo "Using version ${PACKAGE_VERSION}"
+          - npx vsce publish --pre-release -p $VSCE_MARKETPLACE_TOKEN --baseContentUrl https://bitbucket.org/atlassian/atlascode/raw/main/ --packagePath atlascode-${PACKAGE_VERSION}.vsix
+          - npx ovsx publish --pre-release -p $OPENVSX_KEY "atlascode-${PACKAGE_VERSION}.vsix"
+
+pipelines:
+  default:
+    - step: *build-prerelease-extension
+    
+  branches:
+    fork:
+      # First run tests are run
+      # - step: *build-e2e-test  -- enable after OOM issues are fixed
+      
+      # Prepare and release a nightly version first
+      # to prevent users on pre-releases from being downgraded
+      # - step:
+      #     name: Set Nightly Version
+      #     script:
+      #       - PACKAGE_VERSION=$(./scripts/version/get-next-nightly.sh)
+      #       - ./scripts/version/assert-nightly.sh $PACKAGE_VERSION
+      #       - echo "Using version ${PACKAGE_VERSION}"
+      #       - npm -no-git-tag-version --allow-same-version -f version $PACKAGE_VERSION
+      #     artifacts:
+      #       - package.json
+      - step: *build-prerelease-extension
+      - step: *publish-extension-statlas
+      - step: *publish-prerelease-extension
+
+      
+      # Now prepare and release the stable version
+      - step:
+          name: Set Stable Version
+          script:
+            - git fetch --tags
+            - LAST_TAG=$(git describe --tags --abbrev=0 --match "v[0-9]*.[0-9]*.[0-9]*" 2>/dev/null || echo "v0.0.0")
+            - LAST_VERSION=${LAST_TAG#v}
+            - MAJOR=$(echo $LAST_VERSION | cut -d. -f1)
+            - MINOR=$(echo $LAST_VERSION | cut -d. -f2)
+            - PATCH=$(echo $LAST_VERSION | cut -d. -f3)
+            - NEW_PATCH=$((PATCH + 1))
+            - NEW_VERSION="$MAJOR.$MINOR.$NEW_PATCH"
+            - ./scripts/version/assert-stable.sh $NEW_VERSION
+            - npm -no-git-tag-version --allow-same-version -f version $NEW_VERSION
+            - echo "Using version ${NEW_VERSION}"
+            - echo "NEW_VERSION=${NEW_VERSION}" > version.env
+          artifacts:
+            - package.json
+            - version.env
+      - step: *build-extension
+      - step:
+          name: Publish Extension and Create Tag
+          caches:
+            - npm
+          size: 2x
+          script:
+            - source version.env
+            - PACKAGE_VERSION=$(node -p "require('./package.json').version")
+            - echo "Using version ${PACKAGE_VERSION}"
+            - npx vsce publish -p $VSCE_MARKETPLACE_TOKEN --baseContentUrl https://bitbucket.org/atlassian/atlascode/raw/main/ --packagePath atlascode-${PACKAGE_VERSION}.vsix
+            - npx ovsx publish -p $OPENVSX_KEY "atlascode-${PACKAGE_VERSION}.vsix"
+            - git config --global user.email "atlascode-bot@atlassian.com"
+            - git config --global user.name "AtlasCode Release Bot"
+            - git tag -a v${PACKAGE_VERSION} -m "Release v${PACKAGE_VERSION}"
+            - git push origin v${PACKAGE_VERSION}
+  
+  # Scheduled pipeline for nightly builds
+  schedules:
+    - cron: "0 0 * * *" # Runs at midnight every day
+      branches:
+        include: ["main"]
+      name: nightly
+      trigger: schedule
+      deployment: nightly
+      pipeline:
+        - step:
+            name: Set Nightly Version
+            script:
+              - PACKAGE_VERSION=$(./scripts/version/get-next-nightly.sh)
+              - ./scripts/version/assert-nightly.sh $PACKAGE_VERSION
+              - echo "Using version ${PACKAGE_VERSION}"
+              - npm -no-git-tag-version --allow-same-version -f version $PACKAGE_VERSION
+            artifacts:
+              - package.json
+        # - step: *build-e2e-test -- to be enalbed after OOM issues are fixed
+        - step: *build-prerelease-extension
+        - step: *publish-prerelease-extension
+  
+  custom:
+    build-e2e-image:
+      - step:
+          name: Build E2E Docker image
+          services:
+            - docker
+          script:
+            - docker build --platform linux/amd64 --tag atlassian/atlascode-e2e:$BITBUCKET_COMMIT --tag atlassian/atlascode-e2e:latest - <e2e/Dockerfile
+            - pipe: atlassian/docker-push-pipe:2.0.0
+              variables:
+                IMAGE_NAME: 'atlassian/atlascode-e2e'
+                TAGS: '$BITBUCKET_COMMIT latest' 
