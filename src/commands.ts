@@ -28,6 +28,8 @@ import { CommandContext, setCommandContext } from './commandContext';
 
 export enum Commands {
     BitbucketSelectContainer = 'atlascode.bb.selectContainer',
+    BitbucketPullRequestsOverviewRefresh = 'atlascode.bitbucket.pullRequestsOverview.refresh',
+    BitbucketPullRequestsOverviewFocus = 'atlascode.views.bb.pullRequestsOverviewTreeView.focus',
     BitbucketFetchPullRequests = 'atlascode.bb.fetchPullRequests',
     BitbucketRefreshPullRequests = 'atlascode.bb.refreshPullRequests',
     BitbucketToggleFileNesting = 'atlascode.bb.toggleFileNesting',

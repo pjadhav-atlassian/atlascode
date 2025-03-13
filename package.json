@@ -445,6 +445,14 @@
                 "command": "atlascode.disableHelpExplorer",
                 "title": "Disable Help Explorer",
                 "category": "Atlassian"
+            },
+            {
+                "command": "atlascode.bitbucket.pullRequestsOverview.refresh",
+                "title": "Refresh",
+                "icon": {
+                    "light": "resources/light/refresh.svg",
+                    "dark": "resources/dark/refresh.svg"
+                }
             }
         ],
         "viewsContainers": {
@@ -472,6 +480,10 @@
                     "id": "atlascode.views.bb.pullrequestsTreeView",
                     "name": "Bitbucket pull requests",
                     "when": "atlascode:bitbucketExplorerEnabled && config.atlascode.bitbucket.enabled"
+                },
+                {
+                    "id": "atlascode.views.bb.pullRequestsOverviewTreeView",
+                    "name": "Bitbucket pull requests overview"
                 },
                 {
                     "id": "atlascode.views.bb.pipelinesTreeView",
@@ -639,6 +651,11 @@
                 {
                     "command": "atlascode.disableHelpExplorer",
                     "when": "view == atlascode.views.helpTreeView"
+                },
+                {
+                    "command": "atlascode.bitbucket.pullRequestsOverview.refresh",
+                    "when": "view == atlascode.views.bb.pullRequestsOverviewTreeView",
+                    "group": "navigation@1"
                 }
             ],
             "view/item/context": [
@@ -1272,6 +1289,18 @@
                     "type": "boolean",
                     "default": true,
                     "description": "Enables the Bitbucket Pull Request Explorer",
+                    "scope": "window"
+                },
+                "atlascode.bitbucket.internal.explorer.enabled": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Enable the internal API-based pull requests tree view",
+                    "scope": "window"
+                },
+                "atlascode.bitbucket.internal.refreshInterval": {
+                    "type": "number",
+                    "default": 5,
+                    "description": "Interval in minutes between automatic pull request refreshes",
                     "scope": "window"
                 },
                 "atlascode.bitbucket.explorer.nestFilesEnabled": {
