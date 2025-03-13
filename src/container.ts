@@ -65,13 +65,14 @@ import { VSCWelcomeActionApi } from './webview/welcome/vscWelcomeActionApi';
 import { VSCWelcomeWebviewControllerFactory } from './webview/welcome/vscWelcomeWebviewControllerFactory';
 import { WelcomeAction } from './lib/ipc/fromUI/welcome';
 import { WelcomeInitMessage } from './lib/ipc/toUI/welcome';
-import { FeatureFlagClient, Features } from './util/featureFlags';
+import { Experiments, FeatureFlagClient, Features } from './util/featureFlags';
 import { EventBuilder } from './util/featureFlags/eventBuilder';
 import { AtlascodeUriHandler } from './uriHandler';
 import { CheckoutHelper } from './bitbucket/interfaces';
 import { ProductJira } from './atlclients/authInfo';
 import { ATLASCODE_TEST_USER_EMAIL, ATLASCODE_TEST_HOST } from './constants';
 import { CustomJQLViewProvider } from './views/jira/treeViews/customJqlViewProvider';
+import { AssignedWorkItemsViewProvider } from './views/jira/treeViews/jiraAssignedWorkItemsViewProvider';
 import { Logger } from './logger';
 import { SearchJiraHelper } from './views/jira/searchJiraHelper';
 
@@ -79,7 +80,7 @@ const isDebuggingRegex = /^--(debug|inspect)\b(-brk\b|(?!-))=?/;
 const ConfigTargetKey = 'configurationTarget';
 
 export class Container {
-    static initialize(context: ExtensionContext, config: IConfig, version: string) {
+    static async initialize(context: ExtensionContext, config: IConfig, version: string) {
         const analyticsEnv: string = this.isDebugging ? 'staging' : 'prod';
 
         this._analyticsClient = analyticsClient({
@@ -88,7 +89,7 @@ export class Container {
             product: 'externalProductIntegrations',
             subproduct: 'atlascode',
             version: version,
-            deviceId: env.machineId,
+            deviceId: this.machineId,
             enable: this.getAnalyticsEnable(),
         });
 
@@ -187,10 +188,11 @@ export class Container {
 
         this._loginManager = new LoginManager(this._credentialManager, this._siteManager, this._analyticsClient);
         this._bitbucketHelper = new BitbucketCheckoutHelper(context.globalState);
-        FeatureFlagClient.initialize({
+
+        await FeatureFlagClient.initialize({
             analyticsClient: this._analyticsClient,
             identifiers: {
-                analyticsAnonymousId: env.machineId,
+                analyticsAnonymousId: this.machineId,
             },
             eventBuilder: new EventBuilder(),
         })
@@ -200,6 +202,7 @@ export class Container {
             .finally(() => {
                 this.initializeUriHandler(context, this._analyticsApi, this._bitbucketHelper);
                 this.initializeNewSidebarView(context, config);
+                this.initializeAAExperiment();
             });
 
         context.subscriptions.push((this._helpExplorer = new HelpExplorer()));
@@ -209,7 +212,9 @@ export class Container {
         const telemetryConfig = workspace.getConfiguration('telemetry');
         return telemetryConfig.get<boolean>('enableTelemetry', true);
     }
-
+    static initializeAAExperiment() {
+        FeatureFlagClient.checkExperimentValue(Experiments.AtlascodeAA);
+    }
     static initializeUriHandler(
         context: ExtensionContext,
         analyticsApi: VSCAnalyticsApi,
@@ -222,11 +227,13 @@ export class Container {
             context.subscriptions.push(new LegacyAtlascodeUriHandler(analyticsApi, bitbucketHelper));
         }
     }
+
     static initializeNewSidebarView(context: ExtensionContext, config: IConfig) {
         if (FeatureFlagClient.featureGates[Features.NewSidebarTreeView]) {
             Logger.debug('Using new custom JQL view');
             SearchJiraHelper.initialize();
-            context.subscriptions.push((this._customJqlViewProvider = new CustomJQLViewProvider()));
+            context.subscriptions.push(new CustomJQLViewProvider());
+            context.subscriptions.push(new AssignedWorkItemsViewProvider());
         } else {
             this.initializeLegacySidebarView(context, config);
         }
@@ -244,6 +251,7 @@ export class Container {
             });
         }
     }
+
     static initializeBitbucket(bbCtx: BitbucketContext) {
         this._bitbucketContext = bbCtx;
         this._pipelinesExplorer = new PipelinesExplorer(bbCtx);
@@ -544,10 +552,5 @@ export class Container {
     private static _bitbucketHelper: CheckoutHelper;
     static get bitbucketHelper() {
         return this._bitbucketHelper;
-    }
-
-    private static _customJqlViewProvider: CustomJQLViewProvider;
-    static get customJqlViewProvider() {
-        return this._customJqlViewProvider;
     }
 }
