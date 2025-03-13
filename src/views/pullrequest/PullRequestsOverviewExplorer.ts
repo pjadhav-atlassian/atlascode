@@ -14,7 +14,6 @@ export class PullRequestsOverviewExplorer extends BitbucketExplorer {
     constructor(ctx: BitbucketContext) {
         super(ctx);
 
-        // Register commands only once, using our internal-specific commands
         Container.context.subscriptions.push(
             commands.registerCommand(Commands.BitbucketPullRequestsOverviewRefresh, this.refresh, this),
         );
@@ -25,28 +24,22 @@ export class PullRequestsOverviewExplorer extends BitbucketExplorer {
     }
 
     explorerEnabledConfiguration(): string {
-        return 'bitbucket.internal.explorer.enabled';
+        return 'bitbucket.explorer.pullRequestsOverview.enabled';
     }
 
     monitorEnabledConfiguration(): string {
-        return 'bitbucket.internal.monitor.enabled';
+        return 'bitbucket.explorer.pullRequestsOverview.monitorEnabled';
     }
 
     refreshConfiguration(): string {
-        return 'bitbucket.internal.refreshInterval';
+        return 'bitbucket.explorer.pullRequestsOverview.refreshInterval';
     }
 
-    onConfigurationChanged(e: ConfigurationChangeEvent): void {
-        // Handle configuration changes specific to internal pull requests explorer
-        if (
-            configuration.changed(e, 'bitbucket.internal.explorer.enabled') ||
-            configuration.changed(e, 'bitbucket.enabled')
-        ) {
-            // Specific internal PR explorer handling
-            setCommandContext(
-                CommandContext.BitbucketInternalExplorerEnabled,
-                configuration.get<boolean>('bitbucket.internal.explorer.enabled'),
-            );
+    async onConfigurationChanged(e: ConfigurationChangeEvent) {
+        const initializing = configuration.initializing(e);
+
+        if (initializing || configuration.changed(e, 'bitbucket.explorer.pullRequestsOverview.enabled')) {
+            this.updateExplorerState();
         }
     }
 
@@ -61,6 +54,10 @@ export class PullRequestsOverviewExplorer extends BitbucketExplorer {
                 // No-op for now
             },
         };
+    }
+
+    private updateExplorerState() {
+        setCommandContext(CommandContext.PipelineExplorer, Container.config.bitbucket.explorer.pullRequestsOverview);
     }
 
     override async refresh(): Promise<void> {
