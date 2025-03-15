@@ -16,6 +16,7 @@ export class PullRequestsOverviewExplorer extends BitbucketExplorer {
 
         Container.context.subscriptions.push(
             commands.registerCommand(Commands.BitbucketPullRequestsOverviewRefresh, this.refresh, this),
+            this.ctx.onDidChangeBitbucketContext(() => this.updateExplorerState()),
         );
     }
 
@@ -28,19 +29,11 @@ export class PullRequestsOverviewExplorer extends BitbucketExplorer {
     }
 
     monitorEnabledConfiguration(): string {
-        return 'bitbucket.explorer.pullRequestsOverview.monitorEnabled';
+        return 'bitbucket.explorer.pullRequestsOverview.enabled';
     }
 
     refreshConfiguration(): string {
         return 'bitbucket.explorer.pullRequestsOverview.refreshInterval';
-    }
-
-    async onConfigurationChanged(e: ConfigurationChangeEvent) {
-        const initializing = configuration.initializing(e);
-
-        if (initializing || configuration.changed(e, 'bitbucket.explorer.pullRequestsOverview.enabled')) {
-            this.updateExplorerState();
-        }
     }
 
     newTreeDataProvider(): BaseTreeDataProvider {
@@ -48,16 +41,11 @@ export class PullRequestsOverviewExplorer extends BitbucketExplorer {
     }
 
     newMonitor(): BitbucketActivityMonitor {
-        // For now, create a minimal implementation of BitbucketActivityMonitor
         return {
             checkForNewActivity(): void {
                 // No-op for now
             },
         };
-    }
-
-    private updateExplorerState() {
-        setCommandContext(CommandContext.PipelineExplorer, Container.config.bitbucket.explorer.pullRequestsOverview);
     }
 
     override async refresh(): Promise<void> {
@@ -68,5 +56,20 @@ export class PullRequestsOverviewExplorer extends BitbucketExplorer {
         if (this.treeDataProvider) {
             this.treeDataProvider.refresh();
         }
+    }
+
+    async onConfigurationChanged(e: ConfigurationChangeEvent) {
+        const initializing = configuration.initializing(e);
+
+        if (initializing || configuration.changed(e, 'bitbucket.explorer.pullRequestsOverview.enabled')) {
+            this.updateExplorerState();
+        }
+    }
+
+    private updateExplorerState() {
+        setCommandContext(
+            CommandContext.PullRequestOverviewEnabled,
+            Container.config.bitbucket.explorer.pullRequestsOverview,
+        );
     }
 }
