@@ -88,7 +88,7 @@ export const PRExplorer: React.FunctionComponent<PRExplorerProps> = memo(
                                 color="primary"
                                 id="bbPullRequestsOverviewEnabled"
                                 value="explorer.pullRequestsOverview.enabled"
-                                checked={pullRequestsOverviewEnabled}
+                                checked={!!pullRequestsOverviewEnabled}
                                 disabled={!enabled}
                                 onChange={handleChange}
                             />
