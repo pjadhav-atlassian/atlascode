@@ -7,16 +7,10 @@ Stay in the flow by using Atlassian for VSCode to start work on a JIRA issue, ra
 
 [**Download now**](https://marketplace.visualstudio.com/items?itemName=Atlassian.atlascode&ssr=false#overview)
 
-## Devsphere specific changelog
-- [PR-9](https://bitbucket.org/atlassian/atlascode-fork/pull-requests/9/overview)
-    - This PR adds a Pull Request overview section on the Activity Bar view.
-    - The new overview section works independently without needing BB repo to be in the workspace.
-    - Along with that it adds support for updating configurations depending on what view the devpshere website is currently in.
-    - The execution of commands is done by vscode implemented in [this PR](https://bitbucket.org/atlassian/code-server-fork/pull-requests/1/overview) on `code-server` fork.
-    - To add support for new configurations refer to [this file](/src/config/devsphereConfiguration.ts) file.
+## [Devsphere specific changelog](/DEVSPHERE_CHANGELOG.md)
+We're adding certain features & updates to this fork which may or may not be suitable to push upstream. Refer to the [Devsphere specific changelog](/DEVSPHERE_CHANGELOG.md) to get more context.
 
 ## Usage
-
 
 ### Getting Started
 
