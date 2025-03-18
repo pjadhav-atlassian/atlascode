@@ -37,7 +37,7 @@ import { SitesAvailableUpdateEvent } from '../siteManager';
 import { cannotGetClientFor } from '../constants';
 import { configuration } from '../config/configuration';
 import { getProxyHostAndPort } from '@atlassianlabs/pi-client-common';
-import { PullRequestsOverviewApi } from 'src/bitbucket/bitbucket-cloud/pullRequestsOverview';
+import { PullRequestsOverviewApi } from '../bitbucket/bitbucket-cloud/pullRequestsOverview';
 
 const oauthTTL: number = 45 * Interval.MINUTE;
 const serverTTL: number = Interval.FOREVER;

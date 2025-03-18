@@ -1,4 +1,4 @@
-import { DetailedSiteInfo } from 'src/atlclients/authInfo';
+import { DetailedSiteInfo } from '../../atlclients/authInfo';
 import { HTTPClient } from '../httpClient';
 import { BitbucketSite, PullRequest, WorkspaceRepo } from '../model';
 import { CloudPullRequestApi } from './pullRequests';
