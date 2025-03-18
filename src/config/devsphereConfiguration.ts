@@ -7,7 +7,7 @@ interface ConfigurationUpdate {
     value: boolean;
 }
 
-const DEVSPHERE_VIEW_CONFIGS: ConfigurationUpdate[] = [
+const DEVSPHERE_REVIEW_VIEW_CONFIGS: ConfigurationUpdate[] = [
     {
         section: 'atlascode.bitbucket.explorer',
         setting: 'pullRequests.enabled',
@@ -58,31 +58,29 @@ class DevsphereConfigurationManager {
     }
 
     private static async hideActivityBar(): Promise<void> {
-        await DevsphereConfigurationManager.executeVSCodeCommand('workbench.action.activityBarLocation.hide');
+        await this.executeVSCodeCommand('workbench.action.activityBarLocation.hide');
     }
 
     private static async showActivityBar(): Promise<void> {
-        await DevsphereConfigurationManager.executeVSCodeCommand('workbench.action.focusActivityBar');
+        await this.executeVSCodeCommand('workbench.action.focusActivityBar');
     }
 
-    private static async updateAllConfigurations(): Promise<void> {
-        await Promise.allSettled(
-            DEVSPHERE_VIEW_CONFIGS.map((config) => DevsphereConfigurationManager.updateSingleConfiguration(config)),
-        );
+    private static async updateAllConfigurations(configs: ConfigurationUpdate[]): Promise<void> {
+        await Promise.allSettled(configs.map((config) => this.updateSingleConfiguration(config)));
     }
 
     private static async focusOnPullRequestsOverview(): Promise<void> {
-        await DevsphereConfigurationManager.executeVSCodeCommand(Commands.BitbucketPullRequestsOverviewFocus);
+        await this.executeVSCodeCommand(Commands.BitbucketPullRequestsOverviewFocus);
     }
 
     public static async initializeReviewSettings(): Promise<void> {
-        await DevsphereConfigurationManager.hideActivityBar();
-        await DevsphereConfigurationManager.updateAllConfigurations();
-        await DevsphereConfigurationManager.focusOnPullRequestsOverview();
+        await this.hideActivityBar();
+        await this.updateAllConfigurations(DEVSPHERE_REVIEW_VIEW_CONFIGS);
+        await this.focusOnPullRequestsOverview();
     }
 
     public static async initializeCodeSettings(): Promise<void> {
-        await DevsphereConfigurationManager.showActivityBar();
+        await this.showActivityBar();
     }
 }
 
