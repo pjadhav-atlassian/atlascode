@@ -127,8 +127,8 @@
                 "category": "Atlassian"
             },
             {
-                "command": "atlascode.devsphere.code.initialise",
-                "title": "Initialise Devsphere Code Settings",
+                "command": "atlascode.devsphere.custom.reset",
+                "title": "Reset Devsphere Custom Configuration",
                 "category": "Atlassian"
             },
             {
