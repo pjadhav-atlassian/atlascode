@@ -1,6 +1,6 @@
 import { Disposable, Event, EventEmitter, TreeItem } from 'vscode';
 import { viewScreenEvent } from '../analytics';
-import { ProductBitbucket } from '../atlclients/authInfo';
+import { DetailedSiteInfo, ProductBitbucket } from '../atlclients/authInfo';
 
 import { Commands } from '../commands';
 import { Container } from '../container';
@@ -39,12 +39,9 @@ export class PullRequestsOverviewNodeDataProvider extends BaseTreeDataProvider {
         this._prsTitleSectionMap.clear();
 
         try {
-            // Get the first BitbucketSite available
-            const sites = Container.siteManager.getSitesAvailable(ProductBitbucket);
-
-            if (sites.length > 0) {
+            if (this.cloudSite) {
                 const internalSite = {
-                    ...sites[0],
+                    ...this.cloudSite,
                     baseApiUrl: `https://bitbucket.org/!api/internal`,
                 };
 
@@ -84,6 +81,11 @@ export class PullRequestsOverviewNodeDataProvider extends BaseTreeDataProvider {
         return element.getTreeItem();
     }
 
+    get cloudSite(): DetailedSiteInfo | null {
+        const sites = Container.siteManager.getSitesAvailable(ProductBitbucket);
+        return sites.find((site) => site.isCloud) ?? null;
+    }
+
     async getChildren(element?: AbstractBaseNode): Promise<AbstractBaseNode[]> {
         if (Container.siteManager.getSitesAvailable(ProductBitbucket).length === 0) {
             viewScreenEvent('pullRequestsOverviewTreeViewUnauthenticatedMessage', undefined, ProductBitbucket).then(
@@ -95,6 +97,10 @@ export class PullRequestsOverviewNodeDataProvider extends BaseTreeDataProvider {
                     title: 'Open Bitbucket Settings',
                 }),
             ];
+        }
+
+        if (!this.cloudSite) {
+            return [new SimpleNode('This view is only available on Bitbucket Cloud')];
         }
 
         if (element) {
