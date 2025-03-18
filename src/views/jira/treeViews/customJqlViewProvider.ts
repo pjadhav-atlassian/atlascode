@@ -17,11 +17,10 @@ import {
     commands,
     window,
 } from 'vscode';
-import { JiraIssueNode, executeJqlQuery, createLabelItem } from './utils';
+import { JiraIssueNode, executeJqlQuery, createLabelItem, loginToJiraMessageNode } from './utils';
 import { SearchJiraHelper } from '../searchJiraHelper';
 
 const enum ViewStrings {
-    LoginToJiraMessage = 'Please login to Jira',
     ConfigureJqlMessage = 'Configure JQL entries in settings to view Jira issues',
     NoIssuesMessage = 'No issues match this query',
 }
@@ -29,11 +28,7 @@ const enum ViewStrings {
 const CustomJQLViewProviderId = 'atlascode.views.jira.customJqlTreeView';
 
 export class CustomJQLViewProvider implements TreeDataProvider<TreeItem>, Disposable {
-    private static readonly _treeItemLoginToJiraMessage = createLabelItem(ViewStrings.LoginToJiraMessage, {
-        command: Commands.ShowConfigPage,
-        title: 'Login to Jira',
-        arguments: [ProductJira],
-    });
+    private static readonly _treeItemLoginToJiraMessage = loginToJiraMessageNode;
     private static readonly _treeItemConfigureJqlMessage = createLabelItem(ViewStrings.ConfigureJqlMessage, {
         command: Commands.ShowJiraIssueSettings,
         title: 'Configure Filters',
@@ -54,15 +49,29 @@ export class CustomJQLViewProvider implements TreeDataProvider<TreeItem>, Dispos
 
         window.createTreeView(CustomJQLViewProviderId, { treeDataProvider: this });
 
-        setCommandContext(CommandContext.CustomJQLExplorer, true);
+        const jqlEntries = Container.jqlManager.getCustomJQLEntries();
+
+        if (jqlEntries.length > 0) {
+            setCommandContext(CommandContext.CustomJQLExplorer, Container.config.jira.explorer.enabled);
+        }
 
         Container.context.subscriptions.push(configuration.onDidChange(this.onConfigurationChanged, this));
 
         this.refresh();
     }
 
-    onConfigurationChanged(e: ConfigurationChangeEvent) {
-        if (configuration.changed(e, 'jira.jqlList') || configuration.changed(e, 'jira.explorer')) {
+    private onConfigurationChanged(e: ConfigurationChangeEvent) {
+        if (
+            configuration.changed(e, 'jira.jqlList') ||
+            configuration.changed(e, 'jira.explorer') ||
+            configuration.changed(e, 'jira.explorer.enabled')
+        ) {
+            const jqlEntries = Container.jqlManager.getCustomJQLEntries();
+            if (jqlEntries.length > 0) {
+                setCommandContext(CommandContext.CustomJQLExplorer, Container.config.jira.explorer.enabled);
+            } else {
+                setCommandContext(CommandContext.CustomJQLExplorer, false);
+            }
             this.refresh();
         }
     }
@@ -91,6 +100,7 @@ export class CustomJQLViewProvider implements TreeDataProvider<TreeItem>, Dispos
     }
 
     private refresh() {
+        SearchJiraHelper.clearIssues(CustomJQLViewProviderId);
         this._onDidChangeTreeData.fire();
     }
 }
@@ -110,8 +120,11 @@ class JiraIssueQueryNode extends TreeItem {
                 return [JiraIssueQueryNode._treeItemNoIssuesMessage];
             }
 
-            issues = Container.config.jira.explorer.nestSubtasks ? await this.constructIssueTree(issues) : issues;
+            // index only issues that are directly retrieved with the JQL queries, and not
+            // the extra parent items retrieved to rebuild the issues hierarchy
             SearchJiraHelper.appendIssues(issues, CustomJQLViewProviderId);
+
+            issues = Container.config.jira.explorer.nestSubtasks ? await this.constructIssueTree(issues) : issues;
 
             return issues.map((issue) => new JiraIssueNode(JiraIssueNode.NodeType.CustomJqlQueriesNode, issue));
         })();
