@@ -100,6 +100,9 @@ export enum Commands {
     DisableHelpExplorer = 'atlascode.disableHelpExplorer',
     CreateNewJql = 'atlascode.jira.createNewJql',
     RemoveFromSidebar = 'atlascode.jira.removeFromSidebar',
+    ToDoIssue = 'atlascode.jira.todoIssue',
+    InProgressIssue = 'atlascode.jira.inProgressIssue',
+    DoneIssue = 'atlascode.jira.doneIssue',
 }
 
 export function registerCommands(vscodeContext: ExtensionContext) {
@@ -197,6 +200,15 @@ export function registerCommands(vscodeContext: ExtensionContext) {
         commands.registerCommand(
             Commands.ShowIssueForSiteIdAndKey,
             async (siteId: string, issueKey: string) => await showIssueForSiteIdAndKey(siteId, issueKey),
+        ),
+        commands.registerCommand(Commands.ToDoIssue, (issueNode) =>
+            commands.executeCommand(Commands.ShowIssue, issueNode.issue),
+        ),
+        commands.registerCommand(Commands.InProgressIssue, (issueNode) =>
+            commands.executeCommand(Commands.ShowIssue, issueNode.issue),
+        ),
+        commands.registerCommand(Commands.DoneIssue, (issueNode) =>
+            commands.executeCommand(Commands.ShowIssue, issueNode.issue),
         ),
         commands.registerCommand(Commands.AssignIssueToMe, (issueNode: IssueNode) => assignIssue(issueNode)),
         commands.registerCommand(

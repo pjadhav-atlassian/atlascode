@@ -3,41 +3,53 @@ import * as vscode from 'vscode';
 import { DetailedSiteInfo } from '../../atlclients/authInfo';
 import { Commands } from '../../commands';
 import { AbstractBaseNode } from './abstractBaseNode';
+import { Features, FeatureFlagClient } from '../../util/featureFlags';
+import {
+    DONE_ISSUE_ID,
+    IN_PROGRESS_ISSUE_ID,
+    ISSUE_NODE_CONTEXT_VALUE,
+    TO_DO_ISSUE_ID,
+} from '../jira/treeViews/constants';
 
-export const getIssueResourceUri = (issue: MinimalORIssueLink<DetailedSiteInfo>) => {
-    const params = {
-        type: ISSUE_NODE_CONTEXT_VALUE,
-        statusCategory: issue.status.statusCategory.name,
-    };
-    return vscode.Uri.parse(`${issue.siteDetails.baseLinkUrl}/browse/${issue.key}`).with({
-        query: JSON.stringify(params),
-    });
+const getIssueContextValue = (issue: MinimalORIssueLink<DetailedSiteInfo>) => {
+    const statusCategory = issue.status.statusCategory.name;
+    switch (statusCategory.toLowerCase()) {
+        case 'to do':
+            return TO_DO_ISSUE_ID;
+        case 'in progress':
+            return IN_PROGRESS_ISSUE_ID;
+        case 'done':
+            return DONE_ISSUE_ID;
+        default:
+            return ISSUE_NODE_CONTEXT_VALUE;
+    }
 };
 
-const ISSUE_NODE_CONTEXT_VALUE = 'jiraIssue';
 export class IssueNode extends AbstractBaseNode {
     public issue: MinimalORIssueLink<DetailedSiteInfo>;
-
+    private _isUsingNewPanelFG: boolean = false;
     constructor(_issue: MinimalORIssueLink<DetailedSiteInfo>, parent: AbstractBaseNode | undefined) {
         super(parent);
         this.issue = _issue;
+        this._isUsingNewPanelFG = FeatureFlagClient.featureGates[Features.NewSidebarTreeView];
     }
 
     getTreeItem(): vscode.TreeItem {
-        const title = isMinimalIssue(this.issue) && this.issue.isEpic ? this.issue.epicName : this.issue.summary;
+        const { title, description, contextValue } = this.prepareTreeItem();
+
         const treeItem = new vscode.TreeItem(
-            this.issue.key,
+            title,
             isMinimalIssue(this.issue) && (this.issue.subtasks.length > 0 || this.issue.epicChildren.length > 0)
                 ? vscode.TreeItemCollapsibleState.Expanded
                 : vscode.TreeItemCollapsibleState.None,
         );
-        treeItem.description = title;
+        treeItem.description = description;
         treeItem.command = { command: Commands.ShowIssue, title: 'Show Issue', arguments: [this.issue] };
         treeItem.iconPath = vscode.Uri.parse(this.issue.issuetype.iconUrl);
-        treeItem.contextValue = ISSUE_NODE_CONTEXT_VALUE;
+        treeItem.contextValue = contextValue;
         treeItem.tooltip = `${this.issue.key} - ${this.issue.summary}\n\n${this.issue.priority.name}    |    ${this.issue.status.name}`;
 
-        treeItem.resourceUri = getIssueResourceUri(this.issue);
+        treeItem.resourceUri = vscode.Uri.parse(`${this.issue.siteDetails.baseLinkUrl}/browse/${this.issue.key}`);
         return treeItem;
     }
 
@@ -57,5 +69,20 @@ export class IssueNode extends AbstractBaseNode {
             return this.issue.epicChildren.map((epicChild) => new IssueNode(epicChild, this));
         }
         return [];
+    }
+    private prepareTreeItem() {
+        const summary = isMinimalIssue(this.issue) && this.issue.isEpic ? this.issue.epicName : this.issue.summary;
+
+        return this._isUsingNewPanelFG
+            ? {
+                  title: this.issue.key,
+                  description: summary,
+                  contextValue: getIssueContextValue(this.issue),
+              }
+            : {
+                  title: `${this.issue.key} ${summary}`,
+                  description: undefined,
+                  contextValue: ISSUE_NODE_CONTEXT_VALUE,
+              };
     }
 }

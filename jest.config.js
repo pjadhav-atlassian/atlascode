@@ -1,19 +1,6 @@
 module.exports = {
-    roots: ['<rootDir>'],
-    testMatch: ['**/test/**/*.+(ts|tsx|js)', '**/?(*.)+(spec|test).+(ts|tsx|js)'],
-    transform: {
-        '^.+\\.(min.js|ts|tsx)$': [
-            'ts-jest',
-            {
-                tsconfig: 'tsconfig.json',
-            },
-        ],
-    },
-    transformIgnorePatterns: ['/node_modules/'],
-    testPathIgnorePatterns: ['/node_modules/', '/e2e/'],
+    projects: ['<rootDir>/jest.react.config.js', '<rootDir>/jest.unit.config.js'],
     verbose: true,
-    setupFilesAfterEnv: ['<rootDir>/setupTests.js'],
-    // coverage configuration
     collectCoverage: true,
     collectCoverageFrom: ['src/**/*.{ts,tsx}', '!src/**/*.d.ts'],
     coverageDirectory: 'coverage',

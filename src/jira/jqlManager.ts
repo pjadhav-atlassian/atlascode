@@ -78,9 +78,11 @@ export class JQLManager extends Disposable {
             const allList = Container.config.jira.jqlList;
 
             for (const site of sites) {
+                await this.backFillOldDetailedSiteInfo(site);
+
                 if (!allList.some((j) => j.siteId === site.id)) {
                     // only initialize if there are no jql entries for this site
-                    const newEntry = await this.defaultJQLForSite(site);
+                    const newEntry = this.defaultJQLForSite(site);
                     allList.push(newEntry);
                 }
             }
@@ -89,14 +91,24 @@ export class JQLManager extends Disposable {
         });
     }
 
-    async defaultJQLForSite(site: DetailedSiteInfo): Promise<JQLEntry> {
-        const client = await Container.clientManager.jiraClient(site);
+    // In this PR: https://github.com/atlassian/atlascode/pull/169
+    // we have introduced a new field in DetailedSiteInfo that is populated at auth time.
+    // For those who already have this data saved before the introduction of the new logic,
+    // we need to backfill this field to avoid constructing a wrong default JQL query.
+    private async backFillOldDetailedSiteInfo(site: DetailedSiteInfo): Promise<void> {
+        if (site.hasResolutionField === undefined) {
+            const client = await Container.clientManager.jiraClient(site);
+            const fields = await client.getFields();
+            site.hasResolutionField = fields.some((f) => f.id === 'resolution');
 
-        const fields = await client.getFields();
-        const resolutionEnabled = fields.some((f) => f.id === 'resolution');
-        const resolutionClause = resolutionEnabled ? 'AND resolution = Unresolved ' : '';
+            Container.siteManager.addOrUpdateSite(site);
+        }
+    }
 
-        const query = `assignee = currentUser() ${resolutionClause}ORDER BY lastViewed DESC`;
+    private defaultJQLForSite(site: DetailedSiteInfo): JQLEntry {
+        const query = site.hasResolutionField
+            ? 'assignee = currentUser() AND resolution = Unresolved ORDER BY lastViewed DESC'
+            : 'assignee = currentUser() ORDER BY lastViewed DESC';
 
         return {
             id: v4(),
