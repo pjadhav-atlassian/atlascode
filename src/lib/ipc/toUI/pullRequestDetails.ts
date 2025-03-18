@@ -77,7 +77,7 @@ export interface PullRequestDetailsInitMessage {
     pr: PullRequest;
     commits: Commit[];
     currentUser: User;
-    currentBranchName: string;
+    currentBranchName: string | null;
     comments: Comment[];
     tasks: Task[];
     fileDiffs: FileDiff[];
@@ -167,7 +167,7 @@ export const emptyPullRequestDetailsInitMessage: PullRequestDetailsInitMessage =
     pr: emptyPullRequest,
     commits: [],
     currentUser: emptyUser,
-    currentBranchName: '',
+    currentBranchName: null,
     comments: [],
     fileDiffs: [],
     mergeStrategies: [],

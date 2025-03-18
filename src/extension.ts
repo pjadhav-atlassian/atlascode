@@ -23,7 +23,8 @@ import { registerResources } from './resources';
 import { GitExtension } from './typings/git';
 import { pid } from 'process';
 import { startListening } from './atlclients/negotiate';
-import { Experiments, FeatureFlagClient } from './util/featureFlags';
+import { FeatureFlagClient, Experiments } from './util/featureFlags';
+import { registerDevsphereCommands } from './config/devsphereConfiguration';
 import { JQLManager } from './jira/jqlManager';
 
 const AnalyticDelay = 5000;
@@ -85,7 +86,7 @@ export async function activate(context: ExtensionContext) {
     // icon to appear in the activity bar
     activateBitbucketFeatures();
     activateYamlFeatures(context);
-
+    registerDevsphereCommands(context);
     Logger.info(
         `Atlassian for VS Code (v${atlascodeVersion}) activated in ${
             duration[0] * 1000 + Math.floor(duration[1] / 1000000)

@@ -182,22 +182,25 @@ export const PullRequestDetailsPage: React.FunctionComponent = () => {
                                                 </Grid>
 
                                                 <Grid item>
-                                                    <Button
-                                                        disabled={
-                                                            state.pr.data.source.branchName ===
-                                                                state.currentBranchName || state.isCheckingOutBranch
-                                                        }
-                                                        onClick={controller.checkoutBranch}
-                                                        color={'primary'}
-                                                    >
-                                                        <Typography variant="button" noWrap>
-                                                            {state.pr.data.source.branchName === state.currentBranchName
-                                                                ? 'Source branch checked out'
-                                                                : state.isCheckingOutBranch
-                                                                  ? 'Checking out...'
-                                                                  : 'Checkout source branch'}
-                                                        </Typography>
-                                                    </Button>
+                                                    {state.currentBranchName !== null && (
+                                                        <Button
+                                                            disabled={
+                                                                state.pr.data.source.branchName ===
+                                                                    state.currentBranchName || state.isCheckingOutBranch
+                                                            }
+                                                            onClick={controller.checkoutBranch}
+                                                            color={'primary'}
+                                                        >
+                                                            <Typography variant="button" noWrap>
+                                                                {state.pr.data.source.branchName ===
+                                                                state.currentBranchName
+                                                                    ? 'Source branch checked out'
+                                                                    : state.isCheckingOutBranch
+                                                                      ? 'Checking out...'
+                                                                      : 'Checkout source branch'}
+                                                            </Typography>
+                                                        </Button>
+                                                    )}
                                                 </Grid>
                                             </Grid>
                                         </Grid>

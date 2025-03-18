@@ -37,6 +37,7 @@ import { SitesAvailableUpdateEvent } from '../siteManager';
 import { cannotGetClientFor } from '../constants';
 import { configuration } from '../config/configuration';
 import { getProxyHostAndPort } from '@atlassianlabs/pi-client-common';
+import { PullRequestsOverviewApi } from '../bitbucket/bitbucket-cloud/pullRequestsOverview';
 
 const oauthTTL: number = 45 * Interval.MINUTE;
 const serverTTL: number = Interval.FOREVER;
@@ -124,6 +125,9 @@ export class ClientManager implements Disposable {
                     pullrequests: isOAuthInfo(info)
                         ? new CloudPullRequestApi(this.createOAuthHTTPClient(site, info.access))
                         : undefined!,
+                    pullrequestsOverview: isOAuthInfo(info)
+                        ? new PullRequestsOverviewApi(this.createOAuthHTTPClient(site, info.access))
+                        : undefined!,
                     issues: isOAuthInfo(info)
                         ? new BitbucketIssuesApiImpl(this.createOAuthHTTPClient(site, info.access))
                         : undefined!,
@@ -141,6 +145,8 @@ export class ClientManager implements Disposable {
                         isBasicAuthInfo(info) || isPATAuthInfo(info)
                             ? new ServerPullRequestApi(this.createHTTPClient(site, info))
                             : undefined!,
+                    // Note: For now Internal Pull Requests are not supported for Server
+                    pullrequestsOverview: undefined,
                     issues: undefined,
                     pipelines: undefined,
                 };
