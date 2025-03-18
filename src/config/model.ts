@@ -151,7 +151,7 @@ export interface BitbucketExplorer {
     enabled: boolean;
     nestFilesEnabled: boolean;
     refreshInterval: number;
-    pullRequests: boolean;
+    repositoryBasedPullRequestView: boolean;
     pullRequestsOverview: boolean;
     relatedJiraIssues: BitbucketRelatedJiraIssues;
     relatedBitbucketIssues: BitbucketRelatedBitbucketIssues;
@@ -277,7 +277,7 @@ export const emptyBitbucketNotfications: BitbucketNotifications = {
 
 export const emptyBitbucketExplorer: BitbucketExplorer = {
     enabled: true,
-    pullRequests: true,
+    repositoryBasedPullRequestView: true,
     pullRequestsOverview: true,
     nestFilesEnabled: true,
     refreshInterval: 5,

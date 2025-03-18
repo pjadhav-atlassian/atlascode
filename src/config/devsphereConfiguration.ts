@@ -10,7 +10,7 @@ interface ConfigurationUpdate {
 const DEVSPHERE_REVIEW_VIEW_CONFIGS: ConfigurationUpdate[] = [
     {
         section: 'atlascode.bitbucket.explorer',
-        setting: 'pullRequests.enabled',
+        setting: 'repositoryBasedPullRequestView.enabled',
         value: false,
     },
     {

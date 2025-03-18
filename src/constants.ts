@@ -10,7 +10,8 @@ export const JiraJQLListKey = 'jira.jqlList';
 export const JiraHoverProviderConfigurationKey = 'jira.hover.enabled';
 export const BitbucketRelatedIssuesConfigurationKey = 'bitbucket.explorer.relatedJiraIssues.enabled';
 export const BitbucketPullRequestsOverviewConfigurationKey = 'bitbucket.explorer.pullRequestsOverview.enabled';
-export const BitbucketPullRequestsConfigurationKey = 'bitbucket.explorer.pullRequests.enabled';
+export const BitbucketRepositoryBasedPullRequestsConfigurationKey =
+    'bitbucket.explorer.repositoryBasedPullRequestView.enabled';
 export const BitbucketContextMenusConfigurationKey = 'bitbucket.contextMenus.enabled';
 export const CustomJQLTreeId = 'atlascode.views.jira.customJql';
 export const PullRequestTreeViewId = 'atlascode.views.bb.pullrequestsTreeView';

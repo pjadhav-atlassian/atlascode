@@ -503,7 +503,7 @@
                 {
                     "id": "atlascode.views.bb.pullrequestsTreeView",
                     "name": "Bitbucket pull requests",
-                    "when": "atlascode:bitbucketExplorerEnabled && config.atlascode.bitbucket.enabled && config.atlascode.bitbucket.explorer.pullRequests.enabled"
+                    "when": "atlascode:bitbucketExplorerEnabled && config.atlascode.bitbucket.enabled && config.atlascode.bitbucket.explorer.repositoryBasedPullRequestView.enabled"
                 },
                 {
                     "id": "atlascode.views.bb.pullRequestsOverviewTreeView",
@@ -1331,7 +1331,7 @@
                     "description": "Enables the Bitbucket Pull Request Explorer",
                     "scope": "window"
                 },
-                "atlascode.bitbucket.explorer.pullRequests.enabled": {
+                "atlascode.bitbucket.explorer.repositoryBasedPullRequestView.enabled": {
                     "type": "boolean",
                     "default": true,
                     "description": "Enable repository based pull requests tree view",
